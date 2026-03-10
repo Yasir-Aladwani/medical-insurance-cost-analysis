@@ -59,7 +59,13 @@ def train_models(df):
         "importance": rf.feature_importances_
     }).sort_values(by="importance", ascending=False)
 
-    return rf, metrics, feature_importance, X.columns
+    evaluation_data = {
+        "y_test": y_test,
+        "lr_pred": lr_pred,
+        "rf_pred": rf_pred
+    }
+
+    return rf, metrics, feature_importance, X.columns, evaluation_data
 
 def prepare_input(age, sex, bmi, children, smoker, region, model_columns):
     input_dict = {
@@ -86,7 +92,7 @@ def prepare_input(age, sex, bmi, children, smoker, region, model_columns):
 # Load data and models
 # -----------------------------
 df = load_data()
-model, metrics, feature_importance, model_columns = train_models(df)
+model, metrics, feature_importance, model_columns, evaluation_data = train_models(df)
 
 # -----------------------------
 # Sidebar
@@ -136,67 +142,92 @@ if page == "Home":
 # -----------------------------
 elif page == "Dashboard":
     st.title("📊 Dashboard")
+    st.caption("Charts update automatically based on the selected filters.")
 
-    col1, col2 = st.columns(2)
+    st.sidebar.markdown("---")
+    st.sidebar.header("Dashboard Filters")
 
-    with col1:
-        st.subheader("Distribution of Charges")
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.hist(df["charges"], bins=30)
-        ax.set_xlabel("Charges")
-        ax.set_ylabel("Frequency")
-        st.pyplot(fig)
+    sex_filter = st.sidebar.selectbox(
+        "Gender",
+        ["All", "male", "female"]
+    )
 
-    with col2:
-        st.subheader("Charges by Smoking Status")
-        smoker_avg = df.groupby("smoker")["charges"].mean()
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.bar(smoker_avg.index, smoker_avg.values)
-        ax.set_xlabel("Smoker")
+    smoker_filter = st.sidebar.selectbox(
+        "Smoking Status",
+        ["All", "yes", "no"]
+    )
+
+    filtered_df = df.copy()
+
+    if sex_filter != "All":
+        filtered_df = filtered_df[filtered_df["sex"] == sex_filter]
+
+    if smoker_filter != "All":
+        filtered_df = filtered_df[filtered_df["smoker"] == smoker_filter]
+
+    if filtered_df.empty:
+        st.warning("No data available for the selected filters.")
+    else:
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.subheader("Distribution of Charges")
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.hist(filtered_df["charges"], bins=30)
+            ax.set_xlabel("Charges")
+            ax.set_ylabel("Frequency")
+            st.pyplot(fig)
+
+        with col2:
+            st.subheader("Charges by Smoking Status")
+            smoker_avg = filtered_df.groupby("smoker")["charges"].mean()
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.bar(smoker_avg.index, smoker_avg.values)
+            ax.set_xlabel("Smoker")
+            ax.set_ylabel("Average Charges")
+            st.pyplot(fig)
+
+        col3, col4 = st.columns(2)
+
+        with col3:
+            st.subheader("Age vs Charges")
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.scatter(filtered_df["age"], filtered_df["charges"], alpha=0.6)
+            ax.set_xlabel("Age")
+            ax.set_ylabel("Charges")
+            st.pyplot(fig)
+
+        with col4:
+            st.subheader("BMI vs Charges")
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.scatter(filtered_df["bmi"], filtered_df["charges"], alpha=0.6)
+            ax.set_xlabel("BMI")
+            ax.set_ylabel("Charges")
+            st.pyplot(fig)
+
+        st.subheader("Average Charges by Region")
+        region_avg = filtered_df.groupby("region")["charges"].mean().sort_values()
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.bar(region_avg.index, region_avg.values)
+        ax.set_xlabel("Region")
         ax.set_ylabel("Average Charges")
         st.pyplot(fig)
 
-    col3, col4 = st.columns(2)
+        st.subheader("Correlation Matrix")
+        df_corr = filtered_df.copy()
+        df_corr["sex"] = df_corr["sex"].map({"male": 1, "female": 0})
+        df_corr["smoker"] = df_corr["smoker"].map({"yes": 1, "no": 0})
+        df_corr["region"] = df_corr["region"].astype("category").cat.codes
+        corr = df_corr.corr(numeric_only=True)
 
-    with col3:
-        st.subheader("Age vs Charges")
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.scatter(df["age"], df["charges"], alpha=0.6)
-        ax.set_xlabel("Age")
-        ax.set_ylabel("Charges")
+        fig, ax = plt.subplots(figsize=(8, 6))
+        im = ax.imshow(corr, aspect="auto")
+        ax.set_xticks(range(len(corr.columns)))
+        ax.set_yticks(range(len(corr.columns)))
+        ax.set_xticklabels(corr.columns, rotation=45, ha="right")
+        ax.set_yticklabels(corr.columns)
+        fig.colorbar(im)
         st.pyplot(fig)
-
-    with col4:
-        st.subheader("BMI vs Charges")
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.scatter(df["bmi"], df["charges"], alpha=0.6)
-        ax.set_xlabel("BMI")
-        ax.set_ylabel("Charges")
-        st.pyplot(fig)
-
-    st.subheader("Average Charges by Region")
-    region_avg = df.groupby("region")["charges"].mean().sort_values()
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.bar(region_avg.index, region_avg.values)
-    ax.set_xlabel("Region")
-    ax.set_ylabel("Average Charges")
-    st.pyplot(fig)
-
-    st.subheader("Correlation Matrix")
-    df_corr = df.copy()
-    df_corr["sex"] = df_corr["sex"].map({"male": 1, "female": 0})
-    df_corr["smoker"] = df_corr["smoker"].map({"yes": 1, "no": 0})
-    df_corr["region"] = df_corr["region"].astype("category").cat.codes
-    corr = df_corr.corr(numeric_only=True)
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-    im = ax.imshow(corr, aspect="auto")
-    ax.set_xticks(range(len(corr.columns)))
-    ax.set_yticks(range(len(corr.columns)))
-    ax.set_xticklabels(corr.columns, rotation=45, ha="right")
-    ax.set_yticklabels(corr.columns)
-    fig.colorbar(im)
-    st.pyplot(fig)
 
 # -----------------------------
 # Prediction Page
@@ -241,6 +272,44 @@ elif page == "Model Performance":
     results_df = pd.DataFrame(metrics).T.reset_index()
     results_df.columns = ["Model", "MAE", "RMSE", "R2"]
     st.dataframe(results_df, use_container_width=True)
+
+    y_test = evaluation_data["y_test"]
+    lr_pred = evaluation_data["lr_pred"]
+    rf_pred = evaluation_data["rf_pred"]
+
+    st.subheader("Actual vs Predicted — Linear Regression")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.scatter(y_test, lr_pred, alpha=0.6)
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+    ax.set_xlabel("Actual Charges")
+    ax.set_ylabel("Predicted Charges")
+    st.pyplot(fig)
+
+    st.subheader("Actual vs Predicted — Random Forest")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.scatter(y_test, rf_pred, alpha=0.6)
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+    ax.set_xlabel("Actual Charges")
+    ax.set_ylabel("Predicted Charges")
+    st.pyplot(fig)
+
+    st.subheader("Residual Plot — Linear Regression")
+    lr_residuals = y_test - lr_pred
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.scatter(lr_pred, lr_residuals, alpha=0.6)
+    ax.axhline(y=0, linestyle="--")
+    ax.set_xlabel("Predicted Charges")
+    ax.set_ylabel("Residuals")
+    st.pyplot(fig)
+
+    st.subheader("Residual Plot — Random Forest")
+    rf_residuals = y_test - rf_pred
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.scatter(rf_pred, rf_residuals, alpha=0.6)
+    ax.axhline(y=0, linestyle="--")
+    ax.set_xlabel("Predicted Charges")
+    ax.set_ylabel("Residuals")
+    st.pyplot(fig)
 
     st.subheader("Feature Importance (Random Forest)")
     fig, ax = plt.subplots(figsize=(10, 5))
