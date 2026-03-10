@@ -90,14 +90,6 @@ The correlation matrix shows that **smoking status has the strongest correlation
 
 ---
 
-### Feature Importance
-
-![Feature Importance](important_visualizations/feature_importance.png)
-
-Feature importance from the **Random Forest** model confirms that **smoking status**, **BMI**, and **age** are the most influential variables affecting insurance costs.
-
----
-
 ## Machine Learning Models
 
 Two machine learning models were implemented and compared.
@@ -112,20 +104,33 @@ Random Forest was selected as the proposed model because it can **capture nonlin
 
 ---
 
-## Model Performance
+## Model Performance Evaluation
 
 | Model | MAE | RMSE | R² Score |
 |------|------|------|------|
 | Linear Regression | 4181.19 | 5796.82 | 0.78 |
 | Random Forest | 2550.07 | 4576.29 | 0.86 |
 
+The evaluation includes:
+
+- **Actual vs Predicted Plots**
+  - Linear Regression
+  - Random Forest
+
+- **Residual Plots**
+  - Linear Regression
+  - Random Forest
+
 The **Random Forest model achieved better predictive performance** and was selected as the final model.
 
 ---
 
-## Feature Importance
-
+### Feature Importance
 Feature importance from the Random Forest model confirms the findings from the exploratory data analysis.
+
+![Feature Importance](important_visualizations/feature_importance.png)
+
+Feature importance from the **Random Forest** model confirms that **smoking status**, **BMI**, and **age** are the most influential variables affecting insurance costs.
 
 The most influential features affecting insurance charges are:
 
@@ -158,6 +163,8 @@ Smoking status is by far the **most influential variable affecting medical insur
 - Matplotlib
 - Seaborn
 - Scikit-learn
+- Streamlit
+- GitHub
 
 ---
 
