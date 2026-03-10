@@ -110,8 +110,8 @@ Random Forest was selected as the proposed model because it can **capture nonlin
 
 | Model | MAE | RMSE | R² Score |
 |------|------|------|------|
-| Linear Regression | 4182.35 | 5957.61 | 0.81 |
-| Random Forest | 2546.22 | 4625.55 | 0.88 |
+| Linear Regression | 4181.19 | 5796.82 | 0.78 |
+| Random Forest | 2550.07 | 4576.29 | 0.86 |
 
 The **Random Forest model achieved better predictive performance** and was selected as the final model.
 
