@@ -33,13 +33,7 @@ def train_models(df):
     )
 
     lr = LinearRegression()
-    rf = RandomForestRegressor(
-        n_estimators=300,
-        random_state=42,
-        max_depth=10,
-        min_samples_split=5,
-        min_samples_leaf=2
-    )
+    rf = RandomForestRegressor(random_state=42)
 
     lr.fit(X_train, y_train)
     rf.fit(X_train, y_train)
