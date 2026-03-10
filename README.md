@@ -3,6 +3,12 @@
 This project explores the key factors influencing medical insurance charges using **Exploratory Data Analysis (EDA)** and **machine learning techniques**. The goal is to understand how demographic and lifestyle features affect insurance costs and to build predictive models capable of estimating medical insurance charges.
 
 ---
+## Live Demo
+
+Try the interactive Streamlit dashboard:
+
+🔗 https://medical-insurance-cost-analysis-yhmwynldrv3pjbdeez6nhw.streamlit.app/
+---
 
 ## Project Overview
 
@@ -110,8 +116,8 @@ Random Forest was selected as the proposed model because it can **capture nonlin
 
 | Model | MAE | RMSE | R² Score |
 |------|------|------|------|
-| Linear Regression | 4182.35 | 5957.61 | 0.81 |
-| Random Forest | 2546.22 | 4625.55 | 0.88 |
+| Linear Regression | 4181.19 | 5796.82 | 0.78 |
+| Random Forest | 2550.07 | 4576.29 | 0.86 |
 
 The **Random Forest model achieved better predictive performance** and was selected as the final model.
 
@@ -160,6 +166,9 @@ Smoking status is by far the **most influential variable affecting medical insur
 ```
 medical-insurance-cost-analysis
 │
+├── app.py      # Streamlit dashboard and prediction app
+├── requirements.txt      # Python dependencies for Streamlit deployment
+│
 ├── important_visualizations
 │ ├── charges_distribution.png
 │ ├── age_vs_charges.png
@@ -168,8 +177,9 @@ medical-insurance-cost-analysis
 │ ├── Correlation Heatmap.png
 │ └── feature_importance.png
 │
-├── medical_insurance_cost_analysis.ipynb
-├── insurance.csv
+├── medical_insurance_cost_analysis.ipynb     # Data analysis and model development
+├── insurance.csv         # Dataset used for analysis and training
+│
 ├── README.md
 └── .gitattributes
 ```
