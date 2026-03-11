@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -14,12 +17,71 @@ st.set_page_config(
 )
 
 # -----------------------------
+# Custom Dark Theme Styling
+# -----------------------------
+st.markdown("""
+<style>
+    .stApp {
+        background: linear-gradient(180deg, #0B1020 0%, #111827 100%);
+        color: #F9FAFB;
+    }
+
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    div[data-testid="stMetric"] {
+        background: linear-gradient(135deg, #111827 0%, #1F2937 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        padding: 16px;
+        border-radius: 18px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: #9CA3AF;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #F9FAFB;
+    }
+
+    .chart-card {
+        background: linear-gradient(135deg, #111827 0%, #1F2937 100%);
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        margin-bottom: 18px;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.6rem;
+        color: #F9FAFB;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------------
+# Plotly Layout Template
+# -----------------------------
+PLOTLY_LAYOUT = dict(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(17,24,39,0.55)",
+    font=dict(color="#F9FAFB"),
+    margin=dict(l=40, r=20, t=50, b=40)
+)
+
+# -----------------------------
 # Helper functions
 # -----------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("insurance.csv")
-    return df
+    return pd.read_csv("insurance.csv")
 
 @st.cache_resource
 def train_models(df):
@@ -85,8 +147,7 @@ def prepare_input(age, sex, bmi, children, smoker, region, model_columns):
         if col not in input_df.columns:
             input_df[col] = 0
 
-    input_df = input_df[model_columns]
-    return input_df
+    return input_df[model_columns]
 
 # -----------------------------
 # Load data and models
@@ -111,12 +172,10 @@ st.sidebar.info("Medical Insurance Cost Analysis & Prediction")
 # -----------------------------
 if page == "Home":
     st.title("💊 Medical Insurance Cost Analysis and Prediction")
-    st.markdown(
-        """
-        This dashboard explores the key factors affecting medical insurance charges
-        and provides a machine learning model to predict insurance cost based on user inputs.
-        """
-    )
+    st.markdown("""
+    This interactive dashboard explores the key factors affecting medical insurance charges
+    and provides a machine learning model to predict insurance cost based on user inputs.
+    """)
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Rows", df.shape[0])
@@ -125,37 +184,31 @@ if page == "Home":
     col4.metric("Max Charge", f"${df['charges'].max():,.0f}")
 
     st.markdown("### Key Insights")
-    st.markdown(
-        """
-        - Smoking has the strongest impact on medical insurance charges.
-        - Higher BMI is generally associated with higher costs.
-        - Insurance charges tend to increase with age.
-        - Random Forest performs better than Linear Regression on this dataset.
-        """
-    )
+    st.markdown("""
+    - Smoking has the strongest impact on medical insurance charges.
+    - Higher BMI is generally associated with higher costs.
+    - Insurance charges tend to increase with age.
+    - Random Forest performs better than Linear Regression on this dataset.
+    """)
 
-    st.markdown("### Dataset Preview")
-    st.dataframe(df.head(10), use_container_width=True)
+    st.markdown("### Top 10 Highest Insurance Charges")
+    st.dataframe(
+        df.sort_values("charges", ascending=False).head(10),
+        use_container_width=True
+    )
 
 # -----------------------------
 # Dashboard Page
 # -----------------------------
 elif page == "Dashboard":
-    st.title("📊 Dashboard")
-    st.caption("Charts update automatically based on the selected filters.")
+    st.title("📊 Interactive Dashboard")
+    st.caption("Explore the dataset using dynamic filters and professional visualizations.")
 
     st.sidebar.markdown("---")
     st.sidebar.header("Dashboard Filters")
 
-    sex_filter = st.sidebar.selectbox(
-        "Gender",
-        ["All", "male", "female"]
-    )
-
-    smoker_filter = st.sidebar.selectbox(
-        "Smoking Status",
-        ["All", "yes", "no"]
-    )
+    sex_filter = st.sidebar.selectbox("Gender", ["All", "male", "female"])
+    smoker_filter = st.sidebar.selectbox("Smoking Status", ["All", "yes", "no"])
 
     filtered_df = df.copy()
 
@@ -168,66 +221,143 @@ elif page == "Dashboard":
     if filtered_df.empty:
         st.warning("No data available for the selected filters.")
     else:
+        # KPI cards
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Filtered Rows", len(filtered_df))
+        k2.metric("Average Charge", f"${filtered_df['charges'].mean():,.0f}")
+        k3.metric("Median Charge", f"${filtered_df['charges'].median():,.0f}")
+        k4.metric("Max Charge", f"${filtered_df['charges'].max():,.0f}")
+
+        # Row 1
         col1, col2 = st.columns(2)
 
         with col1:
-            st.subheader("Distribution of Charges")
-            fig, ax = plt.subplots(figsize=(8, 5))
-            ax.hist(filtered_df["charges"], bins=30)
-            ax.set_xlabel("Charges")
-            ax.set_ylabel("Frequency")
-            st.pyplot(fig)
+            st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Distribution of Charges</div>', unsafe_allow_html=True)
+            fig = px.histogram(
+                filtered_df,
+                x="charges",
+                nbins=30,
+                color_discrete_sequence=["#06B6D4"]
+            )
+            fig.update_layout(**PLOTLY_LAYOUT)
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         with col2:
-            st.subheader("Charges by Smoking Status")
-            smoker_avg = filtered_df.groupby("smoker")["charges"].mean()
-            fig, ax = plt.subplots(figsize=(8, 5))
-            ax.bar(smoker_avg.index, smoker_avg.values)
-            ax.set_xlabel("Smoker")
-            ax.set_ylabel("Average Charges")
-            st.pyplot(fig)
+            st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Charges by Smoking Status (Box Plot)</div>', unsafe_allow_html=True)
+            fig = px.box(
+                filtered_df,
+                x="smoker",
+                y="charges",
+                color="smoker",
+                color_discrete_map={"yes": "#EF4444", "no": "#10B981"},
+                points="outliers"
+            )
+            fig.update_layout(**PLOTLY_LAYOUT, showlegend=False)
+            fig.update_xaxes(title="Smoking Status")
+            fig.update_yaxes(title="Insurance Charges")
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
+        # Row 2
         col3, col4 = st.columns(2)
 
         with col3:
-            st.subheader("Age vs Charges")
-            fig, ax = plt.subplots(figsize=(8, 5))
-            ax.scatter(filtered_df["age"], filtered_df["charges"], alpha=0.6)
-            ax.set_xlabel("Age")
-            ax.set_ylabel("Charges")
-            st.pyplot(fig)
+            st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Age vs Charges</div>', unsafe_allow_html=True)
+            fig = px.scatter(
+                filtered_df,
+                x="age",
+                y="charges",
+                color="smoker",
+                color_discrete_map={"yes": "#F59E0B", "no": "#3B82F6"},
+                opacity=0.7
+            )
+            fig.update_layout(**PLOTLY_LAYOUT)
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         with col4:
-            st.subheader("BMI vs Charges")
-            fig, ax = plt.subplots(figsize=(8, 5))
-            ax.scatter(filtered_df["bmi"], filtered_df["charges"], alpha=0.6)
-            ax.set_xlabel("BMI")
-            ax.set_ylabel("Charges")
-            st.pyplot(fig)
+            st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">BMI vs Charges</div>', unsafe_allow_html=True)
+            fig = px.scatter(
+                filtered_df,
+                x="bmi",
+                y="charges",
+                color="sex",
+                color_discrete_map={"male": "#8B5CF6", "female": "#EC4899"},
+                opacity=0.7
+            )
+            fig.update_layout(**PLOTLY_LAYOUT)
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        st.subheader("Average Charges by Region")
-        region_avg = filtered_df.groupby("region")["charges"].mean().sort_values()
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.bar(region_avg.index, region_avg.values)
-        ax.set_xlabel("Region")
-        ax.set_ylabel("Average Charges")
-        st.pyplot(fig)
+        # Row 3
+        col5, col6 = st.columns(2)
 
-        st.subheader("Correlation Matrix")
+        with col5:
+            st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Average Charges by Region</div>', unsafe_allow_html=True)
+            region_avg = (
+                filtered_df.groupby("region", as_index=False)["charges"]
+                .mean()
+                .sort_values("charges", ascending=False)
+            )
+            fig = px.bar(
+                region_avg,
+                x="region",
+                y="charges",
+                color="region",
+                color_discrete_sequence=["#14B8A6", "#6366F1", "#F97316", "#EAB308"]
+            )
+            fig.update_layout(**PLOTLY_LAYOUT, showlegend=False)
+            fig.update_xaxes(title="Region")
+            fig.update_yaxes(title="Average Charges")
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col6:
+            st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Top 10 Highest Insurance Charges</div>', unsafe_allow_html=True)
+            top_10 = filtered_df.sort_values("charges", ascending=False).head(10).copy()
+            top_10["label"] = top_10.index.astype(str)
+
+            fig = px.bar(
+                top_10,
+                x="charges",
+                y="label",
+                orientation="h",
+                color="charges",
+                color_continuous_scale="Turbo",
+                hover_data=["age", "sex", "bmi", "children", "smoker", "region"]
+            )
+            fig.update_layout(**PLOTLY_LAYOUT, yaxis_title="Record Index")
+            fig.update_yaxes(autorange="reversed")
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Correlation Heatmap
+        st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Correlation Matrix</div>', unsafe_allow_html=True)
+
         df_corr = filtered_df.copy()
         df_corr["sex"] = df_corr["sex"].map({"male": 1, "female": 0})
         df_corr["smoker"] = df_corr["smoker"].map({"yes": 1, "no": 0})
         df_corr["region"] = df_corr["region"].astype("category").cat.codes
+
         corr = df_corr.corr(numeric_only=True)
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-        im = ax.imshow(corr, aspect="auto")
-        ax.set_xticks(range(len(corr.columns)))
-        ax.set_yticks(range(len(corr.columns)))
-        ax.set_xticklabels(corr.columns, rotation=45, ha="right")
-        ax.set_yticklabels(corr.columns)
-        fig.colorbar(im)
-        st.pyplot(fig)
+        fig = px.imshow(
+            corr,
+            text_auto=True,
+            color_continuous_scale="RdBu_r",
+            aspect="auto"
+        )
+        fig.update_layout(**PLOTLY_LAYOUT)
+        st.plotly_chart(fig, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
 # Prediction Page
@@ -280,7 +410,7 @@ elif page == "Model Performance":
     st.subheader("Actual vs Predicted — Linear Regression")
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.scatter(y_test, lr_pred, alpha=0.6)
-    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--")
     ax.set_xlabel("Actual Charges")
     ax.set_ylabel("Predicted Charges")
     st.pyplot(fig)
@@ -288,7 +418,7 @@ elif page == "Model Performance":
     st.subheader("Actual vs Predicted — Random Forest")
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.scatter(y_test, rf_pred, alpha=0.6)
-    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--")
     ax.set_xlabel("Actual Charges")
     ax.set_ylabel("Predicted Charges")
     st.pyplot(fig)
