@@ -401,54 +401,80 @@ elif page == "Model Performance":
 
     results_df = pd.DataFrame(metrics).T.reset_index()
     results_df.columns = ["Model", "MAE", "RMSE", "R2"]
+
+    st.subheader("Performance Metrics")
     st.dataframe(results_df, use_container_width=True)
 
     y_test = evaluation_data["y_test"]
     lr_pred = evaluation_data["lr_pred"]
     rf_pred = evaluation_data["rf_pred"]
 
-    st.subheader("Actual vs Predicted — Linear Regression")
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.scatter(y_test, lr_pred, alpha=0.6)
-    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--")
-    ax.set_xlabel("Actual Charges")
-    ax.set_ylabel("Predicted Charges")
-    st.pyplot(fig)
+    # -----------------------------
+    # Linear Regression Section
+    # -----------------------------
+    st.markdown("## Linear Regression Evaluation")
 
-    st.subheader("Actual vs Predicted — Random Forest")
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.scatter(y_test, rf_pred, alpha=0.6)
-    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--")
-    ax.set_xlabel("Actual Charges")
-    ax.set_ylabel("Predicted Charges")
-    st.pyplot(fig)
+    col1, col2 = st.columns(2)
 
-    st.subheader("Residual Plot — Linear Regression")
-    lr_residuals = y_test - lr_pred
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.scatter(lr_pred, lr_residuals, alpha=0.6)
-    ax.axhline(y=0, linestyle="--")
-    ax.set_xlabel("Predicted Charges")
-    ax.set_ylabel("Residuals")
-    st.pyplot(fig)
+    with col1:
+        fig, ax = plt.subplots(figsize=(5,4))
+        ax.scatter(y_test, lr_pred, alpha=0.6, color="#60A5FA")
+        ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--")
+        ax.set_title("Actual vs Predicted")
+        ax.set_xlabel("Actual")
+        ax.set_ylabel("Predicted")
+        st.pyplot(fig)
 
-    st.subheader("Residual Plot — Random Forest")
-    rf_residuals = y_test - rf_pred
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.scatter(rf_pred, rf_residuals, alpha=0.6)
-    ax.axhline(y=0, linestyle="--")
-    ax.set_xlabel("Predicted Charges")
-    ax.set_ylabel("Residuals")
-    st.pyplot(fig)
+    with col2:
+        lr_residuals = y_test - lr_pred
+        fig, ax = plt.subplots(figsize=(5,4))
+        ax.scatter(lr_pred, lr_residuals, alpha=0.6, color="#F59E0B")
+        ax.axhline(y=0, linestyle="--")
+        ax.set_title("Residual Plot")
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Residuals")
+        st.pyplot(fig)
 
-    st.subheader("Feature Importance (Random Forest)")
-    fig, ax = plt.subplots(figsize=(10, 5))
+    # -----------------------------
+    # Random Forest Section
+    # -----------------------------
+    st.markdown("## Random Forest Evaluation")
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+        fig, ax = plt.subplots(figsize=(5,4))
+        ax.scatter(y_test, rf_pred, alpha=0.6, color="#34D399")
+        ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--")
+        ax.set_title("Actual vs Predicted")
+        ax.set_xlabel("Actual")
+        ax.set_ylabel("Predicted")
+        st.pyplot(fig)
+
+    with col4:
+        rf_residuals = y_test - rf_pred
+        fig, ax = plt.subplots(figsize=(5,4))
+        ax.scatter(rf_pred, rf_residuals, alpha=0.6, color="#A78BFA")
+        ax.axhline(y=0, linestyle="--")
+        ax.set_title("Residual Plot")
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Residuals")
+        st.pyplot(fig)
+
+    # -----------------------------
+    # Feature Importance
+    # -----------------------------
+    st.markdown("## Feature Importance (Random Forest)")
+
+    fig, ax = plt.subplots(figsize=(8,4))
     top_features = feature_importance.head(10)
-    ax.barh(top_features["feature"], top_features["importance"])
+
+    ax.barh(top_features["feature"], top_features["importance"], color="#38BDF8")
     ax.invert_yaxis()
     ax.set_xlabel("Importance")
     ax.set_ylabel("Feature")
+
     st.pyplot(fig)
 
     best_model = results_df.sort_values("R2", ascending=False).iloc[0]["Model"]
-    st.info(f"Best model based on R² score: {best_model}")
+    st.success(f"Best model based on R² score: {best_model}")
